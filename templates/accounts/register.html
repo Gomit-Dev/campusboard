@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}Register — CampusBoard{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <div class="auth-header">
+            <div class="auth-logo" aria-hidden="true"><i class="bi bi-mortarboard-fill"></i></div>
+            <h1 class="auth-title">Join CampusBoard</h1>
+            <p class="auth-subtitle">Create your student account to get started</p>
+        </div>
+
+        {% if form.non_field_errors %}
+        <div class="auth-errors" role="alert">
+            <ul>
+                {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <form method="post" class="auth-form" novalidate>
+            {% csrf_token %}
+
+            <div class="form-group">
+                <label for="id_full_name" class="form-label">Full Name <span class="required">*</span></label>
+                <input type="text" name="full_name" id="id_full_name"
+                       class="form-control {% if form.full_name.errors %}is-invalid{% endif %}"
+                       placeholder="Alex Smith"
+                       value="{{ form.full_name.value|default:'' }}" required>
+                {% if form.full_name.errors %}
+                {% for error in form.full_name.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="id_role" class="form-label">Role <span class="required">*</span></label>
+                <select name="role" id="id_role" class="form-control {% if form.role.errors %}is-invalid{% endif %}" required>
+                    <option value="student" {% if form.role.value == 'student' or not form.role.value %}selected{% endif %}>Student</option>
+                    <option value="teacher" {% if form.role.value == 'teacher' %}selected{% endif %}>Teacher</option>
+                    <option value="admin" {% if form.role.value == 'admin' %}selected{% endif %}>Admin / Staff</option>
+                </select>
+                {% if form.role.errors %}
+                {% for error in form.role.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                {% endif %}
+                <p class="form-help">Select your campus role (Student, Teacher, or Admin)</p>
+            </div>
+
+            <div class="form-group">
+                <label for="id_email" class="form-label">College Email <span class="required">*</span></label>
+                <input type="email" name="email" id="id_email"
+                       class="form-control {% if form.email.errors %}is-invalid{% endif %}"
+                       placeholder="12345678@lpu.in" autocomplete="email"
+                       value="{{ form.email.value|default:'' }}" required>
+                {% if form.email.errors %}
+                {% for error in form.email.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                {% endif %}
+                <p class="form-help" id="email-help-text">Use your 8-digit registration number — e.g. <strong>12345678@lpu.in</strong></p>
+            </div>
+
+            <div class="form-group">
+                <label for="id_password1" class="form-label">Password <span class="required">*</span></label>
+                <input type="password" name="password1" id="id_password1"
+                       class="form-control {% if form.password1.errors %}is-invalid{% endif %}"
+                       placeholder="At least 8 characters" autocomplete="new-password" required>
+                {% if form.password1.errors %}
+                {% for error in form.password1.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="id_password2" class="form-label">Confirm Password <span class="required">*</span></label>
+                <input type="password" name="password2" id="id_password2"
+                       class="form-control {% if form.password2.errors %}is-invalid{% endif %}"
+                       placeholder="Repeat your password" autocomplete="new-password" required>
+                {% if form.password2.errors %}
+                {% for error in form.password2.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                {% endif %}
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-lg auth-submit">Create Account</button>
+        </form>
+
+        <div class="auth-footer">
+            Already have an account? <a href="{% url 'accounts:login' %}">Log in</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const roleSelect = document.getElementById('id_role');
+        const emailInput = document.getElementById('id_email');
+        const helpText = document.getElementById('email-help-text');
+        if (!roleSelect || !emailInput || !helpText) return;
+
+        function updateRoleHint() {
+            if (roleSelect.value === 'teacher') {
+                emailInput.placeholder = '12345@lpu.in';
+                helpText.innerHTML = 'Teacher 5-digit employee ID — e.g. <strong>12345@lpu.in</strong>';
+            } else if (roleSelect.value === 'admin') {
+                emailInput.placeholder = 'admin@lpu.in';
+                helpText.innerHTML = 'Admin official email ending in <strong>@lpu.in</strong> (e.g. <strong>admin@lpu.in</strong>)';
+            } else {
+                emailInput.placeholder = '12345678@lpu.in';
+                helpText.innerHTML = 'Student 8-digit registration number — e.g. <strong>12345678@lpu.in</strong>';
+            }
+        }
+        roleSelect.addEventListener('change', updateRoleHint);
+        updateRoleHint();
+    });
+</script>
+{% endblock %}

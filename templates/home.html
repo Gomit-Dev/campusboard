@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}CampusBoard — Your Campus Community{% endblock %}
+
+{% block content %}
+<!-- ═══════════════ Hero Section ═══════════════ -->
+<section class="hero">
+    <div class="container hero-container">
+        <div class="hero-content">
+            {% if user.is_authenticated %}
+            <div class="hero-greeting">
+                <i class="bi bi-person-fill"></i> Welcome back, {{ user.get_short_name }}!
+            </div>
+            {% endif %}
+
+            <h1 class="hero-title">
+                Everything happening<br>around your <span class="highlight">campus</span>.
+            </h1>
+            <p class="hero-subtitle">
+                Find your notes, discover campus events, return lost belongings,
+                and stay connected with your college community.
+            </p>
+
+            <form class="hero-search" action="{% url 'posts:browse' %}" method="get">
+                <div class="search-wrapper">
+                    <span class="search-icon" aria-hidden="true"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" placeholder="Search notes, events, lost items..."
+                           value="{{ search_query|default:'' }}" autocomplete="off"
+                           aria-label="Search campus posts">
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </div>
+            </form>
+
+            <div class="hero-actions">
+                <a href="{% url 'posts:browse' %}" class="btn btn-secondary btn-lg">Explore Campus</a>
+                {% if user.is_authenticated %}
+                <a href="{% url 'posts:create' %}" class="btn btn-primary btn-lg"><i class="bi bi-plus-lg"></i> Create Post</a>
+                {% else %}
+                <a href="{% url 'accounts:register' %}" class="btn btn-primary btn-lg">Join CampusBoard</a>
+                {% endif %}
+            </div>
+
+            {% if not user.is_authenticated %}
+            <div class="hero-onboarding">
+                <p>
+                    <i class="bi bi-mortarboard-fill"></i> CampusBoard is where your campus community shares notes, reports lost items,
+                    posts events, and helps each other out. Register with your college email to get started.
+                </p>
+            </div>
+            {% endif %}
+        </div>
+        <div class="hero-visual">
+            <img src="{% static 'pngs/png3.png' %}" alt="Campus Community illustration" class="hero-image" loading="eager">
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════ Category Discovery ═══════════════ -->
+<section class="categories-section" aria-labelledby="categories-heading">
+    <div class="container">
+        <h2 class="section-title" id="categories-heading">Explore Categories</h2>
+        <p class="section-subtitle">Find exactly what you need on campus</p>
+        <div class="category-grid">
+            {% for cat in categories %}
+            <a href="{% url 'posts:browse' %}?category={{ cat.value }}"
+               class="category-card category-{{ cat.value }}"
+               aria-label="{{ cat.name }} — {{ cat.count }} post{{ cat.count|pluralize }}">
+                <div class="category-icon" aria-hidden="true"><i class="bi {{ cat.icon }}"></i></div>
+                <span class="category-name">{{ cat.name }}</span>
+                <span class="category-desc">{{ cat.description }}</span>
+                <span class="category-count">{{ cat.count }} post{{ cat.count|pluralize }}</span>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════ Recent Campus Activity ═══════════════ -->
+<section class="recent-section" aria-labelledby="recent-heading">
+    <div class="container">
+        <div class="section-header">
+            <h2 class="section-title" id="recent-heading">
+                {% if search_query %}
+                    Results for "{{ search_query }}"
+                {% else %}
+                    Recent Campus Activity
+                {% endif %}
+            </h2>
+            <a href="{% url 'posts:browse' %}" class="btn-outline-sm">View All →</a>
+        </div>
+
+        {% if recent_posts %}
+        <div class="posts-grid">
+            {% for post in recent_posts %}
+            <a href="{{ post.get_absolute_url }}" class="post-card">
+                {% if post.image %}
+                <div class="post-card-image">
+                    <img src="{{ post.image.url }}" alt="{{ post.title }}" loading="lazy">
+                </div>
+                {% endif %}
+                <div class="post-card-body">
+                    <div class="post-card-meta">
+                        <span class="post-badge badge-{{ post.category }}"><i class="bi {{ post.get_category_icon }}"></i> {{ post.get_category_display_short }}</span>
+                        {% if post.status != 'active' %}
+                        <span class="post-status status-{{ post.status }}">{{ post.get_status_display }}</span>
+                        {% endif %}
+                        {% if post.category == 'lost_found' and post.lost_found_type %}
+                        <span class="badge-{{ post.lost_found_type }}">{{ post.get_lost_found_type_display }}</span>
+                        {% endif %}
+                    </div>
+                    <h3 class="post-card-title">{{ post.title }}</h3>
+                    <p class="post-card-desc">{{ post.short_description }}</p>
+
+                    {% if post.category == 'events' and post.event_date %}
+                    <div class="post-card-info">
+                        <span class="post-card-info-item"><i class="bi bi-calendar3"></i> {{ post.event_date|date:"M d, Y" }}</span>
+                        {% if post.event_location %}
+                        <span class="post-card-info-item"><i class="bi bi-geo-alt-fill"></i> {{ post.event_location }}</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+
+                    {% if post.category == 'lost_found' and post.item_location %}
+                    <div class="post-card-info">
+                        <span class="post-card-info-item"><i class="bi bi-geo-alt-fill"></i> {{ post.item_location }}</span>
+                    </div>
+                    {% endif %}
+
+                    <div class="post-card-footer">
+                        <div class="post-author">
+                            <span class="author-avatar">{{ post.author.get_short_name|truncatechars:1 }}</span>
+                            <span class="author-name">{{ post.author.full_name|default:post.author.email }}</span>
+                            {% if post.author.is_admin %}
+                            <span class="badge-role-admin-sm" title="Admin"><i class="bi bi-shield-fill-check"></i></span>
+                            {% elif post.author.is_teacher %}
+                            <span class="badge-role-teacher-sm" title="Teacher"><i class="bi bi-person-workspace"></i></span>
+                            {% endif %}
+                            {% if post.author.is_verified %}
+                            <span class="verified-badge" title="Campus Member" aria-label="Campus Member"><i class="bi bi-patch-check-fill"></i></span>
+                            {% endif %}
+                        </div>
+                        <span class="post-time">{{ post.created_at|timesince }} ago</span>
+                    </div>
+                    {% if post.file %}
+                    <div class="post-card-indicator">
+                        <span class="file-indicator"><i class="bi bi-paperclip"></i> Attachment</span>
+                    </div>
+                    {% endif %}
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <span class="empty-icon" aria-hidden="true"><i class="bi bi-inbox-fill"></i></span>
+            {% if search_query %}
+            <h3 class="empty-title">No posts found</h3>
+            <p class="empty-text">No results for "{{ search_query }}". Try a different search or browse all posts.</p>
+            <a href="{% url 'posts:browse' %}" class="btn btn-primary">Browse All Posts</a>
+            {% else %}
+            <h3 class="empty-title">No posts yet</h3>
+            <p class="empty-text">Be the first to share something useful with your campus community!</p>
+            {% if user.is_authenticated %}
+            <a href="{% url 'posts:create' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Create the First Post</a>
+            {% else %}
+            <a href="{% url 'accounts:register' %}" class="btn btn-primary">Join CampusBoard</a>
+            {% endif %}
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

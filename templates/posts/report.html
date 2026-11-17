@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Report Post — CampusBoard{% endblock %}
+
+{% block content %}
+<div class="container report-page">
+    <div class="report-card">
+        <h1><i class="bi bi-flag-fill"></i> Report Post</h1>
+        <p class="report-subtitle">Help keep CampusBoard safe and useful for everyone.</p>
+
+        <div class="report-post-preview">
+            <h3>{{ post.title }}</h3>
+            <p>by {{ post.author.full_name|default:post.author.email }} · {{ post.created_at|timesince }} ago</p>
+        </div>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+
+            {% if form.non_field_errors %}
+            <div class="auth-errors">
+                <ul>
+                    {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="id_reason" class="form-label">Reason <span class="required">*</span></label>
+                <select name="reason" id="id_reason" class="form-control {% if form.reason.errors %}is-invalid{% endif %}">
+                    <option value="">— Select a reason —</option>
+                    <option value="spam" {% if form.reason.value == 'spam' %}selected{% endif %}>Spam</option>
+                    <option value="inappropriate" {% if form.reason.value == 'inappropriate' %}selected{% endif %}>Inappropriate Content</option>
+                    <option value="fake" {% if form.reason.value == 'fake' %}selected{% endif %}>False or Misleading Information</option>
+                    <option value="other" {% if form.reason.value == 'other' %}selected{% endif %}>Other</option>
+                </select>
+                {% if form.reason.errors %}
+                {% for error in form.reason.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                {% endif %}
+            </div>
+
+            <div class="form-group">
+                <label for="id_details" class="form-label">Additional Details (optional)</label>
+                <textarea name="details" id="id_details" class="form-control"
+                          placeholder="Provide additional context if needed..." rows="3">{{ form.details.value|default:'' }}</textarea>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-danger">Submit Report</button>
+                <a href="{% url 'posts:detail' pk=post.pk %}" class="btn btn-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

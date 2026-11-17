@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+
+{% block title %}Create Post — CampusBoard{% endblock %}
+
+{% block content %}
+<div class="container container-narrow create-page">
+    <div class="page-header">
+        <h1>Create Post</h1>
+        <p>Share something useful with your campus community</p>
+    </div>
+
+    <div class="form-card">
+        <form method="post" enctype="multipart/form-data" novalidate>
+            {% csrf_token %}
+
+            <!-- Non-field errors -->
+            {% if form.non_field_errors %}
+            <div class="auth-errors">
+                <ul>
+                    {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            <!-- Category -->
+            <div class="form-group">
+                <label for="id_category" class="form-label">Category <span class="required">*</span></label>
+                {{ form.category }}
+                {% if form.category.errors %}
+                {% for error in form.category.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                {% endif %}
+                <p class="form-help">
+                    Choose the type of post you want to create
+                    {% if not user.is_teacher %}
+                    <span class="text-muted" style="display: block; margin-top: 4px;"><i class="bi bi-info-circle"></i> Announcements can only be published by Teachers.</span>
+                    {% endif %}
+                </p>
+            </div>
+
+            <!-- Title -->
+            <div class="form-group">
+                <label for="id_title" class="form-label">Title <span class="required">*</span></label>
+                <input type="text" name="title" id="id_title" class="form-control {% if form.title.errors %}is-invalid{% endif %}"
+                       placeholder="Give your post a clear title" maxlength="200"
+                       value="{{ form.title.value|default:'' }}" required>
+                {% if form.title.errors %}
+                {% for error in form.title.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+                <label for="id_description" class="form-label">Description <span class="required">*</span></label>
+                <textarea name="description" id="id_description" class="form-control {% if form.description.errors %}is-invalid{% endif %}"
+                          placeholder="Describe in detail..." rows="5" required>{{ form.description.value|default:'' }}</textarea>
+                {% if form.description.errors %}
+                {% for error in form.description.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Event Fields (shown when category = events) -->
+            <div id="event-fields" class="conditional-fields">
+                <div class="form-section">
+                    <h3 class="form-section-title"><i class="bi bi-ticket-perforated-fill"></i> Event Details</h3>
+                    <div class="form-row form-row-3">
+                        <div class="form-group">
+                            <label for="id_event_date" class="form-label">Event Date <span class="required">*</span></label>
+                            <input type="date" name="event_date" id="id_event_date" class="form-control {% if form.event_date.errors %}is-invalid{% endif %}"
+                                   value="{{ form.event_date.value|default:'' }}">
+                            {% if form.event_date.errors %}
+                            {% for error in form.event_date.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_event_time" class="form-label">Start Time</label>
+                            <input type="time" name="event_time" id="id_event_time" class="form-control"
+                                   value="{{ form.event_time.value|default:'' }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="id_event_location" class="form-label">Location</label>
+                            <input type="text" name="event_location" id="id_event_location" class="form-control"
+                                   placeholder="e.g., Main Auditorium"
+                                   value="{{ form.event_location.value|default:'' }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lost & Found Fields (shown when category = lost_found) -->
+            <div id="lostfound-fields" class="conditional-fields">
+                <div class="form-section">
+                    <h3 class="form-section-title"><i class="bi bi-binoculars-fill"></i> Lost & Found Details</h3>
+                    <div class="form-row form-row-3">
+                        <div class="form-group">
+                            <label for="id_lost_found_type" class="form-label">Type <span class="required">*</span></label>
+                            <select name="lost_found_type" id="id_lost_found_type" class="form-control {% if form.lost_found_type.errors %}is-invalid{% endif %}">
+                                <option value="">— Select —</option>
+                                <option value="lost" {% if form.lost_found_type.value == 'lost' %}selected{% endif %}>Lost</option>
+                                <option value="found" {% if form.lost_found_type.value == 'found' %}selected{% endif %}>Found</option>
+                            </select>
+                            {% if form.lost_found_type.errors %}
+                            {% for error in form.lost_found_type.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                            {% endif %}
+                        </div>
+                        <div class="form-group">
+                            <label for="id_item_location" class="form-label">Location</label>
+                            <input type="text" name="item_location" id="id_item_location" class="form-control"
+                                   placeholder="e.g., Library 2nd floor"
+                                   value="{{ form.item_location.value|default:'' }}">
+                        </div>
+                        <div class="form-group">
+                            <label for="id_item_date" class="form-label">Date Lost/Found</label>
+                            <input type="date" name="item_date" id="id_item_date" class="form-control"
+                                   value="{{ form.item_date.value|default:'' }}">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Image Upload with Live Preview -->
+            <div class="form-group upload-group">
+                <label for="id_image" class="form-label">
+                    <i class="bi bi-image"></i> Picture (optional)
+                </label>
+                <div class="custom-file-upload">
+                    <input type="file" name="image" id="id_image" class="form-file-input" accept="image/*">
+                    <label for="id_image" class="file-dropzone">
+                        <i class="bi bi-cloud-arrow-up file-drop-icon"></i>
+                        <span class="file-drop-text">Click or drag a photo to upload</span>
+                        <span class="file-drop-sub">JPG, PNG, GIF, or WebP. Max 10 MB.</span>
+                    </label>
+                </div>
+                {% if form.image.errors %}
+                {% for error in form.image.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                {% endif %}
+
+                <!-- Live Preview Card -->
+                <div id="image-preview-container" class="image-preview-card" style="display: none;">
+                    <div class="image-preview-header"><i class="bi bi-eye-fill"></i> Selected Picture Preview</div>
+                    <div class="image-preview-wrapper">
+                        <img id="image-preview-img" src="" alt="Selected picture preview">
+                        <button type="button" id="image-remove-btn" class="image-remove-btn" title="Remove picture">
+                            <i class="bi bi-x-circle-fill"></i>
+                        </button>
+                    </div>
+                    <div class="image-preview-meta">
+                        <span id="image-preview-name" class="image-preview-filename"></span>
+                        <span id="image-preview-size" class="image-preview-badge"></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Document Upload -->
+            <div class="form-group">
+                <label for="id_file" class="form-label">
+                    <i class="bi bi-file-earmark-text"></i> Document / Attachment (optional)
+                </label>
+                <input type="file" name="file" id="id_file" class="form-file-input" accept=".pdf,.doc,.docx">
+                {% if form.file.errors %}
+                {% for error in form.file.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                {% endif %}
+                <p class="form-help">PDF, DOC, or DOCX. Max 10 MB.</p>
+            </div>
+
+            <!-- Actions -->
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-send-fill"></i> Publish Post
+                </button>
+                <a href="{% url 'home' %}" class="btn btn-secondary btn-lg">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

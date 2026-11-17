@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Explore — CampusBoard{% endblock %}
+
+{% block content %}
+<div class="container">
+    <!-- Browse Header -->
+    <div class="browse-header">
+        <h1 class="browse-title">Explore Campus</h1>
+        <p class="browse-subtitle">Discover posts from your campus community</p>
+    </div>
+
+    <!-- Search & Filter Toolbar -->
+    <form id="browseForm" class="browse-form" method="get" action="{% url 'posts:browse' %}">
+        <div class="browse-toolbar">
+            <div class="browse-search">
+                <div class="browse-search-inner">
+                    <span class="search-icon" aria-hidden="true"><i class="bi bi-search"></i></span>
+                    <input type="text" name="q" placeholder="Search posts..."
+                           value="{{ search_query|default:'' }}"
+                           aria-label="Search posts">
+                </div>
+            </div>
+
+            <div class="browse-filters">
+                <select name="category" class="filter-select" aria-label="Filter by category">
+                    <option value="">All Categories</option>
+                    {% for value, label in category_choices %}
+                    <option value="{{ value }}" {% if selected_category == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+
+                <select name="status" class="filter-select" aria-label="Filter by status">
+                    <option value="">All Status</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if selected_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+
+                {% if selected_category == 'lost_found' %}
+                <select name="lf_type" class="filter-select" aria-label="Filter by Lost/Found type">
+                    <option value="">Lost & Found</option>
+                    {% for value, label in lf_choices %}
+                    <option value="{{ value }}" {% if selected_lf_type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+                {% endif %}
+
+                <select name="sort" class="filter-select" aria-label="Sort posts">
+                    <option value="newest" {% if selected_sort == 'newest' %}selected{% endif %}>Newest first</option>
+                    <option value="oldest" {% if selected_sort == 'oldest' %}selected{% endif %}>Oldest first</option>
+                </select>
+
+                <button type="submit" class="btn btn-primary btn-sm"><i class="bi bi-search"></i> Search</button>
+            </div>
+        </div>
+    </form>
+
+    <!-- Results Info -->
+    <div class="browse-results-info">
+        <span class="results-count">
+            <strong>{{ total_count }}</strong> post{{ total_count|pluralize }} found
+        </span>
+
+        <div class="active-filters">
+            {% if search_query %}
+            <span class="filter-tag"><i class="bi bi-search"></i> "{{ search_query }}"</span>
+            {% endif %}
+            {% if selected_category_label %}
+            <span class="filter-tag">{{ selected_category_label }}</span>
+            {% endif %}
+            {% if selected_status_label %}
+            <span class="filter-tag">{{ selected_status_label }}</span>
+            {% endif %}
+            {% if search_query or selected_category or selected_status or selected_lf_type %}
+            <a href="{% url 'posts:browse' %}" class="clear-filters">Clear all filters</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Posts Grid -->
+    {% if posts %}
+    <div class="posts-grid">
+        {% for post in posts %}
+        <a href="{{ post.get_absolute_url }}" class="post-card">
+            {% if post.image %}
+            <div class="post-card-image">
+                <img src="{{ post.image.url }}" alt="{{ post.title }}" loading="lazy">
+            </div>
+            {% endif %}
+            <div class="post-card-body">
+                <div class="post-card-meta">
+                    <span class="post-badge badge-{{ post.category }}"><i class="bi {{ post.get_category_icon }}"></i> {{ post.get_category_display_short }}</span>
+                    {% if post.status != 'active' %}
+                    <span class="post-status status-{{ post.status }}">{{ post.get_status_display }}</span>
+                    {% endif %}
+                    {% if post.category == 'lost_found' and post.lost_found_type %}
+                    <span class="badge-{{ post.lost_found_type }}">{{ post.get_lost_found_type_display }}</span>
+                    {% endif %}
+                </div>
+                <h3 class="post-card-title">{{ post.title }}</h3>
+                <p class="post-card-desc">{{ post.short_description }}</p>
+
+                {% if post.category == 'events' and post.event_date %}
+                <div class="post-card-info">
+                    <span class="post-card-info-item"><i class="bi bi-calendar3"></i> {{ post.event_date|date:"M d, Y" }}</span>
+                    {% if post.event_location %}
+                    <span class="post-card-info-item"><i class="bi bi-geo-alt-fill"></i> {{ post.event_location }}</span>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                {% if post.category == 'lost_found' and post.item_location %}
+                <div class="post-card-info">
+                    <span class="post-card-info-item"><i class="bi bi-geo-alt-fill"></i> {{ post.item_location }}</span>
+                </div>
+                {% endif %}
+
+                <div class="post-card-footer">
+                    <div class="post-author">
+                        <span class="author-avatar">{{ post.author.get_short_name|truncatechars:1 }}</span>
+                        <span class="author-name">{{ post.author.full_name|default:post.author.email }}</span>
+                        {% if post.author.is_admin %}
+                        <span class="badge-role-admin-sm" title="Admin"><i class="bi bi-shield-fill-check"></i></span>
+                        {% elif post.author.is_teacher %}
+                        <span class="badge-role-teacher-sm" title="Teacher"><i class="bi bi-person-workspace"></i></span>
+                        {% endif %}
+                        {% if post.author.is_verified %}
+                        <span class="verified-badge" title="Campus Member"><i class="bi bi-patch-check-fill"></i></span>
+                        {% endif %}
+                    </div>
+                    <span class="post-time">{{ post.created_at|timesince }} ago</span>
+                </div>
+                {% if post.file %}
+                <div class="post-card-indicator">
+                    <span class="file-indicator"><i class="bi bi-paperclip"></i> Attachment</span>
+                </div>
+                {% endif %}
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+    <nav class="pagination" aria-label="Post pagination">
+        {% if page_obj.has_previous %}
+        <a href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_status %}status={{ selected_status }}&{% endif %}{% if selected_lf_type %}lf_type={{ selected_lf_type }}&{% endif %}sort={{ selected_sort }}&page={{ page_obj.previous_page_number }}"
+           aria-label="Previous page">← Prev</a>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+            {% if page_obj.number == num %}
+            <span class="current" aria-current="page">{{ num }}</span>
+            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <a href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_status %}status={{ selected_status }}&{% endif %}{% if selected_lf_type %}lf_type={{ selected_lf_type }}&{% endif %}sort={{ selected_sort }}&page={{ num }}">{{ num }}</a>
+            {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+        <a href="?{% if search_query %}q={{ search_query }}&{% endif %}{% if selected_category %}category={{ selected_category }}&{% endif %}{% if selected_status %}status={{ selected_status }}&{% endif %}{% if selected_lf_type %}lf_type={{ selected_lf_type }}&{% endif %}sort={{ selected_sort }}&page={{ page_obj.next_page_number }}"
+           aria-label="Next page">Next →</a>
+        {% endif %}
+    </nav>
+    {% endif %}
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-state">
+        <span class="empty-icon" aria-hidden="true"><i class="bi bi-search"></i></span>
+        <h3 class="empty-title">No posts found</h3>
+        <p class="empty-text">
+            {% if search_query or selected_category or selected_status %}
+                Try adjusting your search or filters to find what you're looking for.
+            {% else %}
+                No posts have been shared yet. Be the first to contribute!
+            {% endif %}
+        </p>
+        <div class="btn-group" style="justify-content: center;">
+            {% if search_query or selected_category or selected_status %}
+            <a href="{% url 'posts:browse' %}" class="btn btn-secondary">Clear Filters</a>
+            {% endif %}
+            {% if user.is_authenticated %}
+            <a href="{% url 'posts:create' %}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> Create a Post</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

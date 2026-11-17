@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ post.title }} — CampusBoard{% endblock %}
+
+{% block content %}
+<div class="container detail-page">
+    <a href="{% url 'posts:browse' %}" class="detail-back"><i class="bi bi-arrow-left"></i> Back to Explore</a>
+
+    <div class="detail-card">
+        <!-- Header -->
+        <div class="detail-header">
+            <div class="detail-meta">
+                <span class="post-badge badge-{{ post.category }}"><i class="bi {{ post.get_category_icon }}"></i> {{ post.get_category_display }}</span>
+                <span class="post-status status-{{ post.status }}">{{ post.get_status_display }}</span>
+                {% if post.category == 'lost_found' and post.lost_found_type %}
+                <span class="badge-{{ post.lost_found_type }}">{{ post.get_lost_found_type_display }}</span>
+                {% endif %}
+            </div>
+
+            <h1 class="detail-title">{{ post.title }}</h1>
+
+            <div class="detail-author-bar">
+                <span class="detail-author-avatar">{{ post.author.get_short_name|truncatechars:1 }}</span>
+                <div class="detail-author-info">
+                    <span class="detail-author-name">
+                        {{ post.author.full_name|default:post.author.email }}
+                        {% if post.author.is_admin %}
+                        <span class="badge-role-admin"><i class="bi bi-shield-fill-check"></i> Admin</span>
+                        {% elif post.author.is_teacher %}
+                        <span class="badge-role-teacher"><i class="bi bi-person-workspace"></i> Teacher</span>
+                        {% else %}
+                        <span class="badge-role-student"><i class="bi bi-mortarboard-fill"></i> Student</span>
+                        {% endif %}
+                        {% if post.author.is_verified %}
+                        <span class="badge-campus"><i class="bi bi-patch-check-fill"></i> Campus Member</span>
+                        {% endif %}
+                    </span>
+                    <span class="detail-author-date">
+                        Posted {{ post.created_at|timesince }} ago
+                        {% if post.updated_at != post.created_at %}
+                        · Edited {{ post.updated_at|timesince }} ago
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Body -->
+        <div class="detail-body">
+            <div class="detail-description">{{ post.description }}</div>
+
+            {% if post.image %}
+            <div class="detail-image">
+                <a href="{{ post.image.url }}" target="_blank" rel="noopener noreferrer" title="Click to open original image">
+                    <img src="{{ post.image.url }}" alt="{{ post.title }}">
+                </a>
+            </div>
+            {% endif %}
+
+            {% if post.file %}
+            <div class="detail-attachment">
+                <div class="detail-attachment-info">
+                    <span aria-hidden="true"><i class="bi bi-paperclip"></i></span>
+                    <span>Attached document</span>
+                </div>
+                {% if user.is_authenticated %}
+                <a href="{{ post.file.url }}" class="btn btn-sm btn-outline" download><i class="bi bi-download"></i> Download</a>
+                {% else %}
+                <span class="form-help">Login to download</span>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Event Info Panel -->
+            {% if post.category == 'events' %}
+            <div class="detail-info-panel panel-event">
+                {% if post.event_date %}
+                <div class="detail-info-item">
+                    <span class="detail-info-label"><i class="bi bi-calendar3"></i> Event Date</span>
+                    <span class="detail-info-value">{{ post.event_date|date:"l, F j, Y" }}</span>
+                </div>
+                {% endif %}
+                {% if post.event_time %}
+                <div class="detail-info-item">
+                    <span class="detail-info-label"><i class="bi bi-clock-fill"></i> Start Time</span>
+                    <span class="detail-info-value">{{ post.event_time|time:"g:i A" }}</span>
+                </div>
+                {% endif %}
+                {% if post.event_location %}
+                <div class="detail-info-item">
+                    <span class="detail-info-label"><i class="bi bi-geo-alt-fill"></i> Location</span>
+                    <span class="detail-info-value">{{ post.event_location }}</span>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            <!-- Lost & Found Info Panel -->
+            {% if post.category == 'lost_found' %}
+            <div class="detail-info-panel panel-lost">
+                {% if post.lost_found_type %}
+                <div class="detail-info-item">
+                    <span class="detail-info-label">Type</span>
+                    <span class="detail-info-value">
+                        <span class="badge-{{ post.lost_found_type }}">{{ post.get_lost_found_type_display }}</span>
+                    </span>
+                </div>
+                {% endif %}
+                {% if post.item_location %}
+                <div class="detail-info-item">
+                    <span class="detail-info-label"><i class="bi bi-geo-alt-fill"></i> Location</span>
+                    <span class="detail-info-value">{{ post.item_location }}</span>
+                </div>
+                {% endif %}
+                {% if post.item_date %}
+                <div class="detail-info-item">
+                    <span class="detail-info-label"><i class="bi bi-calendar3"></i> Date</span>
+                    <span class="detail-info-value">{{ post.item_date|date:"F j, Y" }}</span>
+                </div>
+                {% endif %}
+                <div class="detail-info-item">
+                    <span class="detail-info-label">Status</span>
+                    <span class="detail-info-value">
+                        <span class="post-status status-{{ post.status }}">{{ post.get_status_display }}</span>
+                    </span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="detail-footer">
+            <div class="detail-actions">
+                {% if user.is_authenticated %}
+                    {% if is_own_post %}
+                        <!-- Owner actions -->
+                        <a href="{% url 'posts:edit' pk=post.pk %}" class="btn btn-secondary btn-sm"><i class="bi bi-pencil-square"></i> Edit Post</a>
+                        <a href="{% url 'posts:delete' pk=post.pk %}" class="btn btn-danger btn-sm"><i class="bi bi-trash3-fill"></i> Delete</a>
+                        {% if post.category == 'lost_found' and post.status == 'active' %}
+                        <form method="post" action="{% url 'posts:edit' pk=post.pk %}" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="resolve" value="true">
+                        </form>
+                        {% endif %}
+                    {% else %}
+                        <!-- Contact & Report -->
+                        <a href="mailto:{{ post.author.email }}" class="btn btn-primary btn-sm"><i class="bi bi-envelope-fill"></i> Contact</a>
+                        {% if not already_reported %}
+                        <a href="{% url 'posts:report' pk=post.pk %}" class="btn btn-ghost btn-sm"><i class="bi bi-flag-fill"></i> Report</a>
+                        {% else %}
+                        <span class="btn btn-ghost btn-sm disabled"><i class="bi bi-check-circle-fill"></i> Reported</span>
+                        {% endif %}
+                    {% endif %}
+                {% else %}
+                    <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="btn btn-primary btn-sm">Login to Contact</a>
+                {% endif %}
+            </div>
+
+            <div class="detail-timestamps">
+                Created {{ post.created_at|date:"M d, Y g:i A" }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

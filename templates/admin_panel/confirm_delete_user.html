@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Delete User — Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container delete-page">
+    <div class="delete-card">
+        <div class="delete-icon" aria-hidden="true"><i class="bi bi-person-x-fill"></i></div>
+        <h1>Delete {{ target_user.get_role_display }} Account</h1>
+        <p>Are you sure you want to permanently delete this user from CampusBoard? All posts and reports created by this user will also be removed. This action cannot be undone.</p>
+
+        <div class="delete-post-title" style="text-align: left; width: 100%; box-sizing: border-box; padding: 1rem 1.25rem; margin-bottom: 1.5rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                <span class="author-avatar" style="width: 44px; height: 44px; font-size: 1.1rem; flex-shrink: 0;">{{ target_user.get_short_name|truncatechars:1 }}</span>
+                <div style="min-width: 0; flex: 1;">
+                    <strong style="font-size: 1.05rem; display: block; color: var(--color-text); word-break: break-word;">{{ target_user.full_name|default:target_user.email }}</strong>
+                    <span style="font-size: 0.85rem; color: var(--color-text-secondary); word-break: break-all;">{{ target_user.email }}</span>
+                </div>
+            </div>
+            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                {% if target_user.role == 'admin' or target_user.is_superuser %}
+                <span class="badge-role-admin"><i class="bi bi-shield-fill-check"></i> Admin</span>
+                {% elif target_user.role == 'teacher' %}
+                <span class="badge-role-teacher"><i class="bi bi-person-workspace"></i> Teacher</span>
+                {% else %}
+                <span class="badge-role-student"><i class="bi bi-mortarboard-fill"></i> Student</span>
+                {% endif %}
+                <span class="status-badge" style="background: var(--color-bg-alt); color: var(--color-text-secondary); border: 1px solid var(--color-border); font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 9999px;">
+                    <i class="bi bi-calendar-event"></i> Joined {{ target_user.date_joined|date:"M d, Y" }}
+                </span>
+                <span class="status-badge" style="background: var(--color-bg-alt); color: var(--color-text-secondary); border: 1px solid var(--color-border); font-size: 0.75rem; padding: 0.25rem 0.5rem; border-radius: 9999px;">
+                    <i class="bi bi-file-earmark-text"></i> {{ post_count }} Post{{ post_count|pluralize }}
+                </span>
+            </div>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="btn-group" style="justify-content: center; margin-top: 1.5rem; gap: 1rem;">
+                <button type="submit" class="btn btn-danger btn-lg"><i class="bi bi-trash3-fill"></i> Permanently Delete User</button>
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary btn-lg">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile — CampusBoard{% endblock %}
+
+{% block content %}
+<div class="container container-narrow page-container">
+    <div class="profile-layout">
+        <!-- Profile Card -->
+        <div class="profile-card">
+            <div class="profile-avatar-large">
+                {{ user.get_short_name|truncatechars:1 }}
+            </div>
+            <h1 class="profile-name">{{ user.full_name|default:user.get_short_name }}</h1>
+            <p class="profile-email">{{ user.email }}</p>
+            {% if user.is_admin %}
+            <div class="badge-role-admin" style="margin-top: 0.5rem; display: inline-flex;"><i class="bi bi-shield-fill-check"></i> Admin</div>
+            {% elif user.is_teacher %}
+            <div class="badge-role-teacher" style="margin-top: 0.5rem; display: inline-flex;"><i class="bi bi-person-workspace"></i> Teacher</div>
+            {% else %}
+            <div class="badge-role-student" style="margin-top: 0.5rem; display: inline-flex;"><i class="bi bi-mortarboard-fill"></i> Student</div>
+            {% endif %}
+            {% if user.is_verified %}
+            <div class="badge-campus" style="margin-top: 0.5rem; display: inline-flex;"><i class="bi bi-patch-check-fill"></i> Verified Campus Member</div>
+            {% endif %}
+
+            <div class="profile-stats">
+                <div class="stat-item">
+                    <span class="stat-number">{{ total_posts }}</span>
+                    <span class="stat-label">Total Posts</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">{{ active_posts }}</span>
+                    <span class="stat-label">Active Posts</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 1.5rem;">
+                <a href="{% url 'posts:my_posts' %}" class="btn btn-secondary btn-sm" style="width: 100%;">View My Posts</a>
+            </div>
+        </div>
+
+        <!-- Edit Profile Card -->
+        <div class="profile-edit-card">
+            <h2 class="card-title">Profile Settings</h2>
+            <p class="text-muted" style="margin-bottom: 1.5rem; font-size: 0.875rem;">Manage your campus profile details</p>
+
+            <form method="post" class="profile-form" novalidate>
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="auth-errors">
+                    <ul>
+                        {% for error in form.non_field_errors %}
+                        <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+
+                <div class="form-group">
+                    <label for="id_full_name" class="form-label">Full Name</label>
+                    <input type="text" name="full_name" id="id_full_name"
+                           class="form-control {% if form.full_name.errors %}is-invalid{% endif %}"
+                           value="{{ form.full_name.value|default:user.full_name }}">
+                    {% if form.full_name.errors %}
+                    {% for error in form.full_name.errors %}<p class="form-error">{{ error }}</p>{% endfor %}
+                    {% endif %}
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">College Email</label>
+                    <input type="email" class="form-control" value="{{ user.email }}" disabled
+                           style="background: var(--color-border-light); cursor: not-allowed; opacity: 0.75;">
+                    <p class="form-help">Email cannot be changed once registered.</p>
+                </div>
+
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

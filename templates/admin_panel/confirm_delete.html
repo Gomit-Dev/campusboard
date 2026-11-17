@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block title %}Remove Post — Admin Panel{% endblock %}
+
+{% block content %}
+<div class="container delete-page">
+    <div class="delete-card">
+        <div class="delete-icon" aria-hidden="true">🛡️</div>
+        <h1>Remove Post (Admin Moderation)</h1>
+        <p>Are you sure you want to remove this post from the platform? This action cannot be undone.</p>
+
+        <div class="delete-post-title">
+            <span class="post-badge badge-{{ post.category }}">{{ post.get_category_display_short }}</span>
+            <span style="margin-left: 0.5rem;">{{ post.title }}</span>
+            <div style="font-size: 0.8125rem; font-weight: normal; color: var(--color-text-secondary); margin-top: 0.5rem;">
+                by {{ post.author.full_name|default:post.author.email }} · {{ post.created_at|date:"M d, Y" }}
+            </div>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="btn-group" style="justify-content: center; margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-danger btn-lg">Permanently Remove Post</button>
+                <a href="{% url 'admin_dashboard' %}" class="btn btn-secondary btn-lg">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
